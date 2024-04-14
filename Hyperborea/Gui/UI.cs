@@ -1,12 +1,8 @@
 using Dalamud.Interface.Components;
 using ECommons.ExcelServices;
-using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.GameHelpers;
 using ECommons.ImGuiMethods.TerritorySelection;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Environment;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
-using Lumina.Excel.GeneratedSheets;
 
 namespace Hyperborea.Gui;
 
@@ -28,7 +24,7 @@ public unsafe static class UI
         var l = LayoutWorld.Instance()->ActiveLayout;
         var disableCheckbox = !Utils.CanEnablePlugin(out var DisableReasons) || Svc.Condition[ConditionFlag.Mounted];
         if (disableCheckbox) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("Enable Hyperborea", ref P.Enabled))
+        if (ImGui.Checkbox("启用 Hyperborea", ref P.Enabled))
         {
             if (P.Enabled)
             {
@@ -50,14 +46,14 @@ public unsafe static class UI
             ImGui.EndDisabled();
             if (!P.Enabled)
             {
-                ImGuiEx.HelpMarker($"Hyperborea cannot be enabled as you are under the following restricted condition(s):\n{DisableReasons.Print("\n")}", ImGuiColors.DalamudOrange);
+                ImGuiEx.HelpMarker($"受限状态下无法启用 Hyperborea:\n{DisableReasons.Print("\n")}", ImGuiColors.DalamudOrange);
             }
             else
             {
-                ImGuiEx.HelpMarker("You must either dismount or revert your state before disabling Hyperborea.", ImGuiColors.DalamudOrange);
+                ImGuiEx.HelpMarker("在禁用 Hyperborea 前请先下坐骑或恢复原本状态", ImGuiColors.DalamudOrange);
             }
         }
-        ImGuiEx.Text("Packet Filter:");
+        ImGuiEx.Text("包过滤:");
         ImGui.SameLine();
         if (P.Memory.PacketDispatcher_OnSendPacketHook.IsEnabled && P.Memory.PacketDispatcher_OnReceivePacketHook.IsEnabled)
         {
@@ -71,10 +67,10 @@ public unsafe static class UI
             ImGuiEx.Text(EColor.RedBright, "\uf00d");
             ImGui.PopFont();
         }
-        ImGuiEx.Tooltip("When Hyperborea's packet filter is enabled, your packets to and from the game server are filtered to only prevent the client kicking you out to the lobby.");
+        ImGuiEx.Tooltip("当启用插件的包过滤时, 你发送或是接收到的服务器包都会被过滤, 以避免被服务器踢出.");
         ImGui.SameLine();
 
-        ImGuiEx.Text("Interact Hook:");
+        ImGuiEx.Text("交互 Hook:");
         ImGui.SameLine();
         if (P.Memory.TargetSystem_InteractWithObjectHook.IsEnabled)
         {
@@ -88,9 +84,10 @@ public unsafe static class UI
             ImGuiEx.Text(EColor.RedBright, "\uf00d");
             ImGui.PopFont();
         }
-        ImGuiEx.Tooltip("When Hyperborea's interact hook is enabled, you will be unable to interact with EventNpcs/EventObjs.");
+        ImGuiEx.Tooltip("当启用插件的交互 Hook时, 你将无法与游戏物体/NPC交互");
 
-        ImGuiEx.Text("Free Trial:");
+        ImGui.SameLine();
+        ImGuiEx.Text("免费试玩:");
         ImGui.SameLine();
         if (Svc.Condition[ConditionFlag.OnFreeTrial])
         {
@@ -104,7 +101,7 @@ public unsafe static class UI
             ImGuiEx.Text(EColor.RedBright, "\uf00d");
             ImGui.PopFont();
         }
-        ImGuiEx.Tooltip("While Hyperborea attempts to implement safety as much as possible by preventing sending data to server while using it, no guarantees is given and it's always recommended to use it with free trial account.");
+        ImGuiEx.Tooltip("尽管插件已经在尽可能地阻止一些不安全的数据被发送到服务器, 但还是建议你使用免费试玩账号/小号");
 
         if (ImGuiGroup.BeginGroupBox())
         {
@@ -115,8 +112,8 @@ public unsafe static class UI
                 Utils.TryGetZoneInfo(layout, out info);
 
                 var cur = ImGui.GetCursorPos();
-                ImGui.SetCursorPosX(ImGuiEx.GetWindowContentRegionWidth() - ImGuiHelpers.GetButtonSize("Browse").X - ImGuiHelpers.GetButtonSize("Zone Editor").X - 50f);
-                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf002, "Browse"))
+                ImGui.SetCursorPosX(ImGuiEx.GetWindowContentRegionWidth() - ImGuiHelpers.GetButtonSize("浏览").X - ImGuiHelpers.GetButtonSize("区域编辑器").X - 50f);
+                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf002, "浏览"))
                 {
                     new TerritorySelector((uint)a2, (sel, x) =>
                     {
@@ -124,29 +121,29 @@ public unsafe static class UI
                     });
                 }
                 ImGui.SameLine();
-                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf303, "Zone Editor"))
+                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf303, "区域编辑器"))
                 {
                     P.EditorWindow.IsOpen = true;
                     P.EditorWindow.SelectedTerritory = (uint)a2;
                 }
 
                 ImGui.SetCursorPos(cur);
-                ImGuiEx.TextV("Zone Data:");
+                ImGuiEx.TextV("区域数据:");
                 ImGui.SetNextItemWidth(150);
                 var dis = TerritorySelector.Selectors.Any(x => x.IsOpen);
                 if (dis) ImGui.BeginDisabled();
-                ImGui.InputInt("Territory Type ID", ref a2);
+                ImGui.InputInt("区域 ID", ref a2);
                 if (dis) ImGui.EndDisabled();
                 if (ExcelTerritoryHelper.NameExists((uint)a2))
                 {
                     ImGuiEx.Text(ExcelTerritoryHelper.GetName((uint)a2));
                 }
-                ImGuiEx.Text($"Additional Data:");
+                ImGuiEx.Text($"附加数据:");
                 ImGui.SetNextItemWidth(150);
                 var StoryValues = Utils.GetStoryValues((uint)a2);
                 var disableda3 = !StoryValues.Any(x => x != 0);
                 if (disableda3) ImGui.BeginDisabled();
-                if (ImGui.BeginCombo("Story Progress", $"{a3}"))
+                if (ImGui.BeginCombo("进度", $"{a3}"))
                 {
                     foreach (var x in StoryValues.Order())
                     {
@@ -158,11 +155,11 @@ public unsafe static class UI
                 if (disableda3) ImGui.EndDisabled();
                 if (!StoryValues.Contains((uint)a3)) a3 = (int)StoryValues.FirstOrDefault();
                 ImGui.SetNextItemWidth(150);
-                ImGui.InputInt("Argument 4", ref a4);
+                ImGui.InputInt("参数 4", ref a4);
                 ImGui.SetNextItemWidth(150);
-                ImGui.InputInt("Argument 5", ref a5);
+                ImGui.InputInt("参数 5", ref a5);
 
-                ImGui.Checkbox($"Spawn Override:", ref SpawnOverride);
+                ImGui.Checkbox($"出生点重定向:", ref SpawnOverride);
                 if (!SpawnOverride) ImGui.BeginDisabled();
                 CoordBlock("X:", ref Position.X);
                 ImGui.SameLine();
@@ -206,7 +203,7 @@ public unsafe static class UI
                 {
                     var disabled = !Utils.CanUse();
                     if (disabled) ImGui.BeginDisabled();
-                    if (ImGui.Button("Load Zone"))
+                    if (ImGui.Button("加载区域"))
                     {
                         Utils.TryGetZoneInfo(Utils.GetLayout((uint)a2), out var info2);
                         SavedZoneState ??= new SavedZoneState(l->TerritoryTypeId, Player.Object.Position);
@@ -226,7 +223,7 @@ public unsafe static class UI
                 {
                     var disabled = !P.Enabled;
                     if (disabled) ImGui.BeginDisabled();
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Undo, "Revert"))
+                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Undo, "撤回"))
                     {
                         Utils.Revert();
                     }

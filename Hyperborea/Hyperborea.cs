@@ -151,7 +151,7 @@ public unsafe class Hyperborea : IDalamudPlugin
 
     private void OnMapEffect(long arg1, uint arg2, ushort arg3, ushort arg4)
     {
-        InternalLog.Debug($"Map effect: {arg2}, {arg3}, {arg4}");
+        InternalLog.Debug($"地图效果: {arg2}, {arg3}, {arg4}");
     }
 
     private void OnTerritoryChanged(ushort obj)

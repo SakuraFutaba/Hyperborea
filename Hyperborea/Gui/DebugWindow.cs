@@ -12,7 +12,7 @@ using System.Windows.Forms;
 namespace Hyperborea.Gui;
 public unsafe class DebugWindow: Window
 {
-    public DebugWindow() : base("Hyperborea Debug Window")
+    public DebugWindow() : base("Hyperborea 调试")
     {
         EzConfigGui.WindowSystem.AddWindow(this);
     }
@@ -50,11 +50,11 @@ public unsafe class DebugWindow: Window
                 ImGuiEx.Text($"{l->ActiveFestivals[1]}");
                 ImGuiEx.Text($"{l->ActiveFestivals[2]}");
                 ImGuiEx.Text($"{l->ActiveFestivals[3]}");
-                ImGui.InputInt("fest 0", ref ints[0]);
-                ImGui.InputInt("fest 1", ref ints[1]);
-                ImGui.InputInt("fest 2", ref ints[2]);
-                ImGui.InputInt("fest 3", ref ints[3]);
-                if (ImGui.Button("Set festivals"))
+                ImGui.InputInt("节日 0", ref ints[0]);
+                ImGui.InputInt("节日 1", ref ints[1]);
+                ImGui.InputInt("节日 2", ref ints[2]);
+                ImGui.InputInt("节日 3", ref ints[3]);
+                if (ImGui.Button("设置节日"))
                 {
                     var s = stackalloc uint[] { (uint)ints[0], (uint)ints[1], (uint)ints[2], (uint)ints[3] };
                     l->SetActiveFestivals(s);
@@ -62,7 +62,7 @@ public unsafe class DebugWindow: Window
             }
         }
 
-        ImGui.Checkbox($"Bypass all restrictions", ref P.Bypass);
+        ImGui.Checkbox($"无视所有限制", ref P.Bypass);
         if(ImGui.Button("Fill phases based on supported weather"))
         {
             if (P.Weathers.TryGetValue(Svc.ClientState.TerritoryType, out var weathers))
@@ -79,14 +79,14 @@ public unsafe class DebugWindow: Window
                 level.Phases = [];
                 foreach (var x in weathers)
                 {
-                    level.Phases.Add(new() { Weather = x, Name = $"Phase {++i}" });
+                    level.Phases.Add(new() { Weather = x, Name = $"阶段 {++i}" });
                 }
                 P.SaveZoneData();
-                Notify.Info($"Success");
+                Notify.Info($"成功");
             }
             else
             {
-                Notify.Error($"Failure");
+                Notify.Error($"失败");
             }
         }
         if(ImGui.CollapsingHeader("Map effect"))
