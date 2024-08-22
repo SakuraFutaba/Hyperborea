@@ -157,10 +157,10 @@ public unsafe class Memory
         try
         {
             var opcode = *(ushort*)a2;
-
+            
             switch (opcode)
             {
-                case 724:
+                case 960:
                     PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");
                     return PacketDispatcher_OnSendPacketHook.Original(a1, a2, a3, a4);
 
