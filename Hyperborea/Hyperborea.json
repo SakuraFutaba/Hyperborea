@@ -1,10 +1,11 @@
 {
-    "Author": "kawaii",
-    "Name": "Hyperborea",
-    "InternalName": "Hyperborea",
-    "Description": "Load and explore any zone in relative safety, mainly for taking GPoses in now inaccessible locations.",
-    "Punchline": "What if we GPosed in the Mordion Gaol?",
-    "RepoUrl": "https://github.com/kawaii/Hyperborea",
-    "AcceptsFeedback": false,
-    "DalamudApiLevel": 10
+  "Author": "kawaii, AtmoOmen",
+  "Name": "Hyperborea",
+  "InternalName": "Hyperborea",
+  "Description": "安全地前往探索游戏内的任何区域, 主要用于拍照\n\n汉化与国服适配: AtmoOmen",
+  "Punchline": "你说, 我们去陌迪翁牢狱里拍照怎么样?",
+  "IconUrl": "https://jsd.cdn.zzko.cn/gh/AtmoOmen/Hyperborea@latest/icon.png",
+  "RepoUrl": "https://github.com/AtmoOmen/Hyperborea",
+  "AcceptsFeedback": false,
+  "DalamudApiLevel": 10
 }
