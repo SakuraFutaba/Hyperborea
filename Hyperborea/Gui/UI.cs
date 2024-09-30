@@ -31,13 +31,6 @@ public unsafe static class UI
             if(ImGuiEx.Button("Try updating opcodes", EzThrottler.Check("Opcode")))
             {
                 EzThrottler.Throttle("Opcode", 60000, true);
-                S.ThreadPool.Run(S.OpcodeUpdater.RunForCurrentVersion, (x) =>
-                {
-                    if(x != null)
-                    {
-                        ChatPrinter.Red($"Error updating opcodes: \n{x.Message}");
-                    }
-                });
             }
             return;
         }

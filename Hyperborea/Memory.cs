@@ -157,7 +157,7 @@ public unsafe class Memory
         try
         {
             var opcode = *(ushort*)a2;
-
+            PluginLog.Debug($"上行操作码: {opcode}");
             if (C.OpcodesZoneUp.Contains(opcode))
             {
                 PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");

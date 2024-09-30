@@ -47,13 +47,13 @@ public unsafe class Hyperborea : IDalamudPlugin
     public bool Noclip = false;
     public FestivalData[] FestivalDatas;
     public List<int> SelectedFestivals = [];
-    public bool AllowedOperation = false;
+    public bool AllowedOperation = true;
 
     public Hyperborea(IDalamudPluginInterface pi)
     {
         P = this;
         ECommonsMain.Init(pi, P);
-
+        
         new TickScheduler(() =>
         {
             EzConfig.DefaultSerializationFactory = YamlFactory;
