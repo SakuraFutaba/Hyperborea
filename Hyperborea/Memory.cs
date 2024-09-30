@@ -11,7 +11,7 @@ namespace Hyperborea;
 public unsafe class Memory
 {
     internal delegate nint LoadZone(nint a1, uint a2, int a3, byte a4, byte a5, byte a6);
-    [EzHook("40 55 56 57 41 56 41 57 48 83 EC 50 48 8B F9")]
+    [EzHook("40 55 56 57 41 56 41 57 48 83 EC 50 48 8B F9", false)]
     internal EzHook<LoadZone> LoadZoneHook;
 
     const string PacketDispatcher_OnReceivePacketHookSig = "40 55 56 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 8B FA";
@@ -22,7 +22,7 @@ public unsafe class Memory
     internal EzHook<PacketDispatcher_OnReceivePacket> PacketDispatcher_OnReceivePacketMonitorHook;
 
     internal delegate byte PacketDispatcher_OnSendPacket(nint a1, nint a2, nint a3, byte a4);
-    [EzHook("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 56 41 57 48 83 EC 70 8B 81 ?? ?? ?? ??", false)]
+    [EzHook("48 89 5C 24 ?? 48 89 74 24 ?? 4C 89 64 24 ?? 55 41 56 41 57 48 8B EC 48 83 EC 70", false)]
     internal EzHook<PacketDispatcher_OnSendPacket> PacketDispatcher_OnSendPacketHook;
 
     internal delegate nint TargetSystem_InteractWithObject(nint a1, nint a2, byte a3);
@@ -30,18 +30,18 @@ public unsafe class Memory
     internal EzHook<TargetSystem_InteractWithObject> TargetSystem_InteractWithObjectHook;
 
     internal delegate nint SetupTerritoryTypeDelegate(void* EventFramework, ushort territoryType);
-    internal SetupTerritoryTypeDelegate SetupTerritoryType = EzDelegate.Get<SetupTerritoryTypeDelegate>("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC 20 48 8B F9 66 89 91");
+    internal SetupTerritoryTypeDelegate SetupTerritoryType = EzDelegate.Get<SetupTerritoryTypeDelegate>("48 89 5C 24 ?? 48 89 6C 24 ?? 57 48 83 EC 20 0F B7 DA");
 
     internal delegate nint SetupInstanceContent(nint a1, uint a2, uint a3, uint a4);
-    [EzHook("48 89 5C 24 ?? 57 48 83 EC 20 48 8B F9 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8", false)]
+    [EzHook("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? E8 ?? ?? ?? ?? 8B 54 24 70 48 8B C8 E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F B6 54 24", true)]
     internal EzHook<SetupInstanceContent> SetupInstanceContentHook;
 
     internal delegate byte FinalizeInstanceContent(nint a1, uint a2);
-    [EzHook("48 89 5C 24 ?? 57 48 83 EC 20 48 8B F9 8B DA 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0", false)]
+    [EzHook("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC 70 48 8D B1", false)]
     internal EzHook<FinalizeInstanceContent> FinalizeInstanceContentHook;
 
-    internal delegate nint IsFlightProhibited(nint a1);
-    [EzHook("48 89 5C 24 ?? 57 48 83 EC 20 48 8B 1D ?? ?? ?? ?? 48 8B F9 48 85 DB 0F 84 ?? ?? ?? ?? 80 3D", false)]
+    internal delegate nint IsFlightProhibited();
+    [EzHook("40 53 48 83 EC 20 48 8B 1D ?? ?? ?? ?? 48 85 DB 0F 84 ?? ?? ?? ?? 80 3D", false)]
     internal EzHook<IsFlightProhibited> IsFlightProhibitedHook;
 
     internal byte* ActiveScene;
@@ -52,7 +52,7 @@ public unsafe class Memory
         ActiveScene = (byte*)(((nint)EnvManager.Instance()) + 36);
     }
 
-    internal nint IsFlightProhibitedDetour(nint a1)
+    internal nint IsFlightProhibitedDetour()
     {
         try
         {
@@ -62,7 +62,7 @@ public unsafe class Memory
         {
             e.Log();
         }
-        return IsFlightProhibitedHook.Original(a1);
+        return IsFlightProhibitedHook.Original();
     }
 
     private byte FinalizeInstanceContentDetour(nint a1, uint a2)
@@ -75,7 +75,7 @@ public unsafe class Memory
     {
         try
         {
-            InternalLog.Debug($"SetupInstanceContentDetour: {a2:X8}, {a3}, {a4}");
+            PluginLog.Debug($"SetupInstanceContentDetour: {a2:X8}, {a3}, {a4}");
             var l = LayoutWorld.Instance()->ActiveLayout;
             if (l != null)
             {
@@ -130,8 +130,8 @@ public unsafe class Memory
 
     public void EnableFirewall()
     {
-        PacketDispatcher_OnReceivePacketHook?.Enable();
-        PacketDispatcher_OnSendPacketHook?.Enable();
+        PacketDispatcher_OnReceivePacketHook.Enable();
+        PacketDispatcher_OnSendPacketHook.Enable();
         IsFlightProhibitedHook?.Enable();
     }
 
@@ -139,7 +139,7 @@ public unsafe class Memory
     {
         PacketDispatcher_OnReceivePacketHook.Pause();
         PacketDispatcher_OnSendPacketHook.Pause();
-        IsFlightProhibitedHook.Pause();
+        IsFlightProhibitedHook?.Pause();
     }
 
     public bool IsFirewallEnabled => PacketDispatcher_OnSendPacketHook.IsEnabled;
@@ -157,16 +157,15 @@ public unsafe class Memory
         try
         {
             var opcode = *(ushort*)a2;
-            
-            switch (opcode)
-            {
-                case 960:
-                    PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");
-                    return PacketDispatcher_OnSendPacketHook.Original(a1, a2, a3, a4);
 
-                default:
-                    PluginLog.Verbose($"[HyperFirewall] Suppressing outgoing packet with opcode {opcode}.");
-                    break;
+            if (C.OpcodesZoneUp.Contains(opcode))
+            {
+                PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");
+                return PacketDispatcher_OnSendPacketHook.Original(a1, a2, a3, a4);
+            }
+            else
+            {
+                PluginLog.Verbose($"[HyperFirewall] Suppressing outgoing packet with opcode {opcode}.");
             }
         }
         catch (Exception e)
@@ -191,17 +190,14 @@ public unsafe class Memory
         {
             var opcode = *(ushort*)(a3 + 2);
 
-            switch (opcode)
+            if (C.OpcodesZoneDown.Contains(opcode))
             {
-                case 273:
-                case 579:
-                    PluginLog.Verbose($"[HyperFirewall] Passing incoming packet with opcode {opcode} through.");
-                    PacketDispatcher_OnReceivePacketHook.Original(a1, a2, a3);
-                    return;
-
-                default:
-                    PluginLog.Verbose($"[HyperFirewall] Suppressing incoming packet with opcode {opcode}.");
-                    break;
+                PluginLog.Verbose($"[HyperFirewall] Passing incoming packet with opcode {opcode} through.");
+                PacketDispatcher_OnReceivePacketHook.Original(a1, a2, a3);
+            }
+            else
+            {
+                PluginLog.Verbose($"[HyperFirewall] Suppressing incoming packet with opcode {opcode}.");
             }
         }
         catch (Exception e)

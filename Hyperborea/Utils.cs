@@ -257,7 +257,7 @@ public unsafe static class Utils
         var content = ExcelTerritoryHelper.Get((uint)territory).ContentFinderCondition?.Value?.Content;
         if (content != null && content != 0)
         {
-            P.Memory.SetupInstanceContentHook.Detour((nint)EventFramework.Instance(), 0x80030000 + content.Value, content.Value, 0);
+            P.Memory.SetupInstanceContentHook.Original((nint)EventFramework.Instance(), 0x80030000 + content.Value, content.Value, 0);
             InstanceContentWasLoaded = content.Value;
         }
 

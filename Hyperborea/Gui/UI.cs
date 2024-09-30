@@ -3,6 +3,10 @@ using ECommons.ExcelServices;
 using ECommons.GameHelpers;
 using ECommons.ImGuiMethods.TerritorySelection;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
+using Lumina.Excel.GeneratedSheets;
+using Hyperborea.Services;
+using ECommons.ChatMethods;
+using ECommons.Throttlers;
 
 namespace Hyperborea.Gui;
 
@@ -21,10 +25,26 @@ public unsafe static class UI
 
     public static void DrawNeo()
     {
+        if(!P.AllowedOperation)
+        {
+            ImGuiEx.Text(EColor.RedBright, $"For this version, no opcodes are found. Please wait until they are available again.");
+            if(ImGuiEx.Button("Try updating opcodes", EzThrottler.Check("Opcode")))
+            {
+                EzThrottler.Throttle("Opcode", 60000, true);
+                S.ThreadPool.Run(S.OpcodeUpdater.RunForCurrentVersion, (x) =>
+                {
+                    if(x != null)
+                    {
+                        ChatPrinter.Red($"Error updating opcodes: \n{x.Message}");
+                    }
+                });
+            }
+            return;
+        }
         var l = LayoutWorld.Instance()->ActiveLayout;
         var disableCheckbox = !Utils.CanEnablePlugin(out var DisableReasons) || Svc.Condition[ConditionFlag.Mounted];
         if (disableCheckbox) ImGui.BeginDisabled();
-        if (ImGui.Checkbox("ÆôÓÃ Hyperborea", ref P.Enabled))
+        if (ImGui.Checkbox("å¯ç”¨ Hyperborea", ref P.Enabled))
         {
             if (P.Enabled)
             {
@@ -46,14 +66,14 @@ public unsafe static class UI
             ImGui.EndDisabled();
             if (!P.Enabled)
             {
-                ImGuiEx.HelpMarker($"ÊÜÏÞ×´Ì¬ÏÂÎÞ·¨ÆôÓÃ Hyperborea:\n{DisableReasons.Print("\n")}", ImGuiColors.DalamudOrange);
+                ImGuiEx.HelpMarker($"å—é™çŠ¶æ€ä¸‹æ— æ³•å¯ç”¨ Hyperborea:\n{DisableReasons.Print("\n")}", ImGuiColors.DalamudOrange);
             }
             else
             {
-                ImGuiEx.HelpMarker("ÔÚ½ûÓÃ Hyperborea Ç°ÇëÏÈÏÂ×øÆï»ò»Ö¸´Ô­±¾×´Ì¬", ImGuiColors.DalamudOrange);
+                ImGuiEx.HelpMarker("åœ¨ç¦ç”¨ Hyperborea å‰è¯·å…ˆä¸‹åéª‘æˆ–æ¢å¤åŽŸæœ¬çŠ¶æ€", ImGuiColors.DalamudOrange);
             }
         }
-        ImGuiEx.Text("°ü¹ýÂË:");
+        ImGuiEx.Text("åŒ…è¿‡æ»¤:");
         ImGui.SameLine();
         if (P.Memory.PacketDispatcher_OnSendPacketHook.IsEnabled && P.Memory.PacketDispatcher_OnReceivePacketHook.IsEnabled)
         {
@@ -67,10 +87,10 @@ public unsafe static class UI
             ImGuiEx.Text(EColor.RedBright, "\uf00d");
             ImGui.PopFont();
         }
-        ImGuiEx.Tooltip("µ±ÆôÓÃ²å¼þµÄ°ü¹ýÂËÊ±, Äã·¢ËÍ»òÊÇ½ÓÊÕµ½µÄ·þÎñÆ÷°ü¶¼»á±»¹ýÂË, ÒÔ±ÜÃâ±»·þÎñÆ÷Ìß³ö.");
+        ImGuiEx.Tooltip("å½“å¯ç”¨æ’ä»¶çš„åŒ…è¿‡æ»¤æ—¶, ä½ å‘é€æˆ–æ˜¯æŽ¥æ”¶åˆ°çš„æœåŠ¡å™¨åŒ…éƒ½ä¼šè¢«è¿‡æ»¤, ä»¥é¿å…è¢«æœåŠ¡å™¨è¸¢å‡º.");
         ImGui.SameLine();
 
-        ImGuiEx.Text("½»»¥ Hook:");
+        ImGuiEx.Text("äº¤äº’ Hook:");
         ImGui.SameLine();
         if (P.Memory.TargetSystem_InteractWithObjectHook.IsEnabled)
         {
@@ -84,10 +104,10 @@ public unsafe static class UI
             ImGuiEx.Text(EColor.RedBright, "\uf00d");
             ImGui.PopFont();
         }
-        ImGuiEx.Tooltip("µ±ÆôÓÃ²å¼þµÄ½»»¥ HookÊ±, Äã½«ÎÞ·¨ÓëÓÎÏ·ÎïÌå/NPC½»»¥");
+        ImGuiEx.Tooltip("å½“å¯ç”¨æ’ä»¶çš„äº¤äº’ Hookæ—¶, ä½ å°†æ— æ³•ä¸Žæ¸¸æˆç‰©ä½“/NPCäº¤äº’");
 
         ImGui.SameLine();
-        ImGuiEx.Text("Ãâ·ÑÊÔÍæ:");
+        ImGuiEx.Text("å…è´¹è¯•çŽ©:");
         ImGui.SameLine();
         if (Svc.Condition[ConditionFlag.OnFreeTrial])
         {
@@ -101,7 +121,7 @@ public unsafe static class UI
             ImGuiEx.Text(EColor.RedBright, "\uf00d");
             ImGui.PopFont();
         }
-        ImGuiEx.Tooltip("¾¡¹Ü²å¼þÒÑ¾­ÔÚ¾¡¿ÉÄÜµØ×èÖ¹Ò»Ð©²»°²È«µÄÊý¾Ý±»·¢ËÍµ½·þÎñÆ÷, µ«»¹ÊÇ½¨ÒéÄãÊ¹ÓÃÃâ·ÑÊÔÍæÕËºÅ/Ð¡ºÅ");
+        ImGuiEx.Tooltip("å°½ç®¡æ’ä»¶å·²ç»åœ¨å°½å¯èƒ½åœ°é˜»æ­¢ä¸€äº›ä¸å®‰å…¨çš„æ•°æ®è¢«å‘é€åˆ°æœåŠ¡å™¨, ä½†è¿˜æ˜¯å»ºè®®ä½ ä½¿ç”¨å…è´¹è¯•çŽ©è´¦å·/å°å·");
 
         if (ImGuiGroup.BeginGroupBox())
         {
@@ -112,8 +132,8 @@ public unsafe static class UI
                 Utils.TryGetZoneInfo(layout, out info);
 
                 var cur = ImGui.GetCursorPos();
-                ImGui.SetCursorPosX(ImGuiEx.GetWindowContentRegionWidth() - ImGuiHelpers.GetButtonSize("ä¯ÀÀ").X - ImGuiHelpers.GetButtonSize("ÇøÓò±à¼­Æ÷").X - 50f);
-                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf002, "ä¯ÀÀ"))
+                ImGui.SetCursorPosX(ImGuiEx.GetWindowContentRegionWidth() - ImGuiHelpers.GetButtonSize("æµè§ˆ").X - ImGuiHelpers.GetButtonSize("åŒºåŸŸç¼–è¾‘å™¨").X - 50f);
+                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf002, "æµè§ˆ"))
                 {
                     new TerritorySelector((uint)a2, (sel, x) =>
                     {
@@ -121,29 +141,29 @@ public unsafe static class UI
                     });
                 }
                 ImGui.SameLine();
-                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf303, "ÇøÓò±à¼­Æ÷"))
+                if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf303, "åŒºåŸŸç¼–è¾‘å™¨"))
                 {
                     P.EditorWindow.IsOpen = true;
                     P.EditorWindow.SelectedTerritory = (uint)a2;
                 }
 
                 ImGui.SetCursorPos(cur);
-                ImGuiEx.TextV("ÇøÓòÊý¾Ý:");
+                ImGuiEx.TextV("åŒºåŸŸæ•°æ®:");
                 ImGui.SetNextItemWidth(150);
                 var dis = TerritorySelector.Selectors.Any(x => x.IsOpen);
                 if (dis) ImGui.BeginDisabled();
-                ImGui.InputInt("ÇøÓò ID", ref a2);
+                ImGui.InputInt("åŒºåŸŸ ID", ref a2);
                 if (dis) ImGui.EndDisabled();
                 if (ExcelTerritoryHelper.NameExists((uint)a2))
                 {
                     ImGuiEx.Text(ExcelTerritoryHelper.GetName((uint)a2));
                 }
-                ImGuiEx.Text($"¸½¼ÓÊý¾Ý:");
+                ImGuiEx.Text($"é™„åŠ æ•°æ®:");
                 ImGui.SetNextItemWidth(150);
                 var StoryValues = Utils.GetStoryValues((uint)a2);
                 var disableda3 = !StoryValues.Any(x => x != 0);
                 if (disableda3) ImGui.BeginDisabled();
-                if (ImGui.BeginCombo("½ø¶È", $"{a3}"))
+                if (ImGui.BeginCombo("è¿›åº¦", $"{a3}"))
                 {
                     foreach (var x in StoryValues.Order())
                     {
@@ -155,11 +175,11 @@ public unsafe static class UI
                 if (disableda3) ImGui.EndDisabled();
                 if (!StoryValues.Contains((uint)a3)) a3 = (int)StoryValues.FirstOrDefault();
                 ImGui.SetNextItemWidth(150);
-                ImGui.InputInt("²ÎÊý 4", ref a4);
+                ImGui.InputInt("å‚æ•° 4", ref a4);
                 ImGui.SetNextItemWidth(150);
-                ImGui.InputInt("²ÎÊý 5", ref a5);
+                ImGui.InputInt("å‚æ•° 5", ref a5);
 
-                ImGui.Checkbox($"³öÉúµãÖØ¶¨Ïò:", ref SpawnOverride);
+                ImGui.Checkbox($"å‡ºç”Ÿç‚¹é‡å®šå‘:", ref SpawnOverride);
                 if (!SpawnOverride) ImGui.BeginDisabled();
                 CoordBlock("X:", ref Position.X);
                 ImGui.SameLine();
@@ -203,7 +223,7 @@ public unsafe static class UI
                 {
                     var disabled = !Utils.CanUse();
                     if (disabled) ImGui.BeginDisabled();
-                    if (ImGui.Button("¼ÓÔØÇøÓò"))
+                    if (ImGui.Button("åŠ è½½åŒºåŸŸ"))
                     {
                         Utils.TryGetZoneInfo(Utils.GetLayout((uint)a2), out var info2);
                         SavedZoneState ??= new SavedZoneState(l->TerritoryTypeId, Player.Object.Position);
@@ -223,7 +243,7 @@ public unsafe static class UI
                 {
                     var disabled = !P.Enabled;
                     if (disabled) ImGui.BeginDisabled();
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Undo, "³·»Ø"))
+                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Undo, "æ’¤å›ž"))
                     {
                         Utils.Revert();
                     }
