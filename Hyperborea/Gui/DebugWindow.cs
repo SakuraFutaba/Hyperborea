@@ -125,13 +125,6 @@ public unsafe class DebugWindow: Window
             }
         }
 
-        if (ImGui.CollapsingHeader("monitor hook"))
-        {
-            if (ImGui.Button("Enable hook")) P.Memory.PacketDispatcher_OnReceivePacketMonitorHook.Enable();
-            if (ImGui.Button("Pause hook")) P.Memory.PacketDispatcher_OnReceivePacketMonitorHook.Pause();
-            if (ImGui.Button("Disable hook")) P.Memory.PacketDispatcher_OnReceivePacketMonitorHook.Disable();
-        }
-
         if (ImGui.CollapsingHeader("Story"))
         {/*
             foreach (var x in Svc.Data.GetExcelSheet<Story>())

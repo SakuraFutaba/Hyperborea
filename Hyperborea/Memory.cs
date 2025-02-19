@@ -1,11 +1,8 @@
-﻿using Dalamud;
-using Dalamud.Memory;
-using ECommons.ExcelServices;
+﻿using ECommons.ExcelServices;
 using ECommons.EzHookManager;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Environment;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
 using Lumina.Excel.Sheets;
-using System.Net.NetworkInformation;
 
 namespace Hyperborea;
 public unsafe class Memory
@@ -13,13 +10,6 @@ public unsafe class Memory
     internal delegate nint LoadZone(nint a1, uint a2, int a3, byte a4, byte a5, byte a6);
     [EzHook("40 55 56 57 41 56 41 57 48 83 EC 50 48 8B F9", false)]
     internal EzHook<LoadZone> LoadZoneHook;
-
-    const string PacketDispatcher_OnReceivePacketHookSig = "40 55 56 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 8B FA";
-    internal delegate void PacketDispatcher_OnReceivePacket(nint a1, uint a2, nint a3);
-    [EzHook(PacketDispatcher_OnReceivePacketHookSig, false)]
-    internal EzHook<PacketDispatcher_OnReceivePacket> PacketDispatcher_OnReceivePacketHook;
-    [EzHook(PacketDispatcher_OnReceivePacketHookSig, false)]
-    internal EzHook<PacketDispatcher_OnReceivePacket> PacketDispatcher_OnReceivePacketMonitorHook;
 
     internal delegate byte PacketDispatcher_OnSendPacket(nint a1, nint a2, nint a3, byte a4);
     [EzHook("48 89 5C 24 ?? 48 89 74 24 ?? 4C 89 64 24 ?? 55 41 56 41 57 48 8B EC 48 83 EC 70", false)]
@@ -46,8 +36,12 @@ public unsafe class Memory
 
     internal byte* ActiveScene;
 
+    private static int HeartbeatOpcode;
+
     public Memory()
     {
+        HeartbeatOpcode = Marshal.ReadInt32(Svc.SigScanner.ScanText("C7 44 24 ?? ?? ?? ?? ?? 48 F7 F1") + 0x4);
+        
         EzSignatureHelper.Initialize(this);
         ActiveScene = (byte*)(((nint)EnvManager.Instance()) + 36);
     }
@@ -97,32 +91,6 @@ public unsafe class Memory
         return SetupInstanceContentHook.Original(a1, a2, a3, a4);
     }
 
-    private void PacketDispatcher_OnReceivePacketMonitorDetour(nint a1, uint a2, nint a3)
-    {
-        PacketDispatcher_OnReceivePacketMonitorHook.Original(a1, a2, a3);
-        try
-        {
-            var opcode = *(ushort*)(a3 + 2);
-            var dataPtr = a3 + 16;
-            if(opcode == 0xE2)
-            {
-                var acopcode = *(ushort*)(dataPtr);
-                var data = "";
-                try
-                {
-                    data = $"{MemoryHelper.ReadRaw(dataPtr + 4, 28).Select(x => $"{x:X2}").Print(" ")}";
-                }
-                catch{ }
-                PluginLog.Debug($"ActorControl: {acopcode} / {data}"); //
-            }
-        }
-        catch(Exception e)
-        {
-            e.Log();
-        }
-        //return ret;
-    }
-
     private nint TargetSystem_InteractWithObjectDetour(nint a1, nint a2, byte a3)
     {
         return 0;
@@ -130,14 +98,12 @@ public unsafe class Memory
 
     public void EnableFirewall()
     {
-        PacketDispatcher_OnReceivePacketHook.Enable();
         PacketDispatcher_OnSendPacketHook.Enable();
         IsFlightProhibitedHook?.Enable();
     }
 
     public void DisableFirewall()
     {
-        PacketDispatcher_OnReceivePacketHook.Pause();
         PacketDispatcher_OnSendPacketHook.Pause();
         IsFlightProhibitedHook?.Pause();
     }
@@ -157,7 +123,7 @@ public unsafe class Memory
         try
         {
             var opcode = *(ushort*)a2;
-            if (C.OpcodesZoneUp.Contains(opcode))
+            if ((ushort)HeartbeatOpcode == opcode)
             {
                 PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");
                 return PacketDispatcher_OnSendPacketHook.Original(a1, a2, a3, a4);
@@ -175,38 +141,6 @@ public unsafe class Memory
         }
 
         return DefaultReturnValue;
-    }
-
-    private void PacketDispatcher_OnReceivePacketDetour(nint a1, uint a2, nint a3)
-    {
-        if (a3 == IntPtr.Zero)
-        {
-            PluginLog.Error("[HyperFirewall] Error: Data pointer is null.");
-            return;
-        }
-
-        try
-        {
-            var opcode = *(ushort*)(a3 + 2);
-
-            if (C.OpcodesZoneDown.Contains(opcode))
-            {
-                PluginLog.Verbose($"[HyperFirewall] Passing incoming packet with opcode {opcode} through.");
-                PacketDispatcher_OnReceivePacketHook.Original(a1, a2, a3);
-            }
-            else
-            {
-                PluginLog.Verbose($"[HyperFirewall] Suppressing incoming packet with opcode {opcode}.");
-            }
-        }
-        catch (Exception e)
-        {
-            PluginLog.Error($"[HyperFirewall] Exception caught while processing opcode: {e.Message}");
-            e.Log();
-            return;
-        }
-
-        return;
     }
 
     internal nint LoadZoneDetour(nint a1, uint a2, int a3, byte a4, byte a5, byte a6)

@@ -287,8 +287,8 @@ public unsafe static class Utils
 
     public static bool CanUse()
     {
-        var hooks = (P.Memory.PacketDispatcher_OnReceivePacketHook.IsEnabled && P.Memory.PacketDispatcher_OnSendPacketHook.IsEnabled);
-        var inn = Utils.IsInInn() || C.DisableInnCheck;
+        var hooks = P.Memory.PacketDispatcher_OnSendPacketHook.IsEnabled;
+        var inn   = Utils.IsInInn() || C.DisableInnCheck;
         return hooks && inn;
     }
 

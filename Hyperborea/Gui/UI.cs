@@ -69,7 +69,7 @@ public unsafe static class UI
         }
         ImGuiEx.Text("包过滤:");
         ImGui.SameLine();
-        if (P.Memory.PacketDispatcher_OnSendPacketHook.IsEnabled && P.Memory.PacketDispatcher_OnReceivePacketHook.IsEnabled)
+        if (P.Memory.PacketDispatcher_OnSendPacketHook.IsEnabled)
         {
             ImGui.PushFont(UiBuilder.IconFont);
             ImGuiEx.Text(EColor.GreenBright, FontAwesomeIcon.Check.ToIconString());
