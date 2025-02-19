@@ -3,7 +3,7 @@ using ECommons.ExcelServices;
 using ECommons.GameHelpers;
 using ECommons.ImGuiMethods.TerritorySelection;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Hyperborea.Services;
 using ECommons.ChatMethods;
 using ECommons.Throttlers;
@@ -22,6 +22,7 @@ public unsafe static class UI
     internal static int a6 = 1;
     static Point3 Position = new(0,0,0);
     static bool SpawnOverride;
+    static int CFCOverride = 0;
 
     public static void DrawNeo()
     {
@@ -171,6 +172,8 @@ public unsafe static class UI
                 ImGui.InputInt("参数 4", ref a4);
                 ImGui.SetNextItemWidth(150);
                 ImGui.InputInt("参数 5", ref a5);
+                ImGui.SetNextItemWidth(150);
+                ImGui.InputInt("CFC 重载", ref CFCOverride);
 
                 ImGui.Checkbox($"出生点重定向:", ref SpawnOverride);
                 if (!SpawnOverride) ImGui.BeginDisabled();
@@ -220,7 +223,7 @@ public unsafe static class UI
                     {
                         Utils.TryGetZoneInfo(Utils.GetLayout((uint)a2), out var info2);
                         SavedZoneState ??= new SavedZoneState(l->TerritoryTypeId, Player.Object.Position);
-                        Utils.LoadZone((uint)a2, !SpawnOverride, true, a3, a4, a5, a6);
+                        Utils.LoadZone((uint)a2, !SpawnOverride, true, a3, a4, a5, a6, CFCOverride);
                         if (SpawnOverride)
                         {
                             Player.GameObject->SetPosition(Position.X, Position.Y, Position.Z);

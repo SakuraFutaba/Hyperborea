@@ -1,5 +1,5 @@
 {
-  "Author": "kawaii, AtmoOmen",
+  "Author": "kawaii, AtmoOmen (本地化)",
   "Name": "Hyperborea",
   "InternalName": "Hyperborea",
   "Description": "安全地前往探索游戏内的任何区域, 主要用于拍照\n\n汉化与国服适配: AtmoOmen",
@@ -7,5 +7,5 @@
   "IconUrl": "https://jsd.cdn.zzko.cn/gh/AtmoOmen/Hyperborea@latest/icon.png",
   "RepoUrl": "https://github.com/AtmoOmen/Hyperborea",
   "AcceptsFeedback": false,
-  "DalamudApiLevel": 10
+  "DalamudApiLevel": 11
 }
