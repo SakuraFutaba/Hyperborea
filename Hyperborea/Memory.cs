@@ -36,11 +36,46 @@ public unsafe class Memory
 
     internal byte* ActiveScene;
 
-    private static int HeartbeatOpcode;
+    private static int HeartbeatUpOpcode;
+    private static int? HeartbeatDownOpcode;
+    private static int? ActorControlSelfOpcode;
 
     public Memory()
     {
-        HeartbeatOpcode = Marshal.ReadInt32(Svc.SigScanner.ScanText("C7 44 24 ?? ?? ?? ?? ?? 48 F7 F1") + 0x4);
+        HeartbeatUpOpcode = Marshal.ReadInt32(Svc.SigScanner.ScanText("C7 44 24 ?? ?? ?? ?? ?? 48 F7 F1") + 0x4);
+
+        var opcodeMapAddr = Svc.SigScanner.ScanText("49 8B 40 10  4C 8B 50 38  41 0F B7 42 02  83 C0 ??  3D ?? ?? ?? ??  0F 87 ?? ?? ?? ??  4C 8D 1D ?? ?? ?? ??  48 98  45 8B 8C 83 ?? ?? ?? ??");
+        var heartbeatDownAddr = Svc.SigScanner.ScanText("48 8B 01 4D 8D 4A 10 48 FF 60 20");
+        var actorControlSelfAddr = Svc.SigScanner.ScanText("48 8B 01 4D 8D 4A 10 48 FF A0 18 07 00 00");
+        var minCase = -(sbyte)Marshal.ReadByte(opcodeMapAddr + 15);
+        var jumpTableSize = Marshal.ReadInt32(opcodeMapAddr + 17) + 1;
+        var imagebaseAddr = opcodeMapAddr + 30 + 4 + Marshal.ReadInt32(opcodeMapAddr + 30);
+        var jumpTableRVA = Marshal.ReadInt32(opcodeMapAddr + 40);
+        var jumpTableAddr = imagebaseAddr + jumpTableRVA;
+        for (var i = 0; i < jumpTableSize; i++)
+        {
+            var caseBodyAddrOffset = Marshal.ReadInt32(jumpTableAddr + 4 * i);
+            if (caseBodyAddrOffset == heartbeatDownAddr - imagebaseAddr)
+            {
+                HeartbeatDownOpcode ??= i + minCase;
+            }
+            if (caseBodyAddrOffset == actorControlSelfAddr - imagebaseAddr)
+            {
+                ActorControlSelfOpcode ??= i + minCase;
+            }
+            if (HeartbeatDownOpcode.HasValue && ActorControlSelfOpcode.HasValue) 
+                break;
+        }
+
+        var logMessageHeartbeatDown = HeartbeatDownOpcode.HasValue 
+            ? $"[HyperFirewall] Found Opcode HeartbeatDown:{HeartbeatDownOpcode}" 
+            : "[HyperFirewall] Error: Couldn't find Opcode HeartbeatDown";
+        var logMessageActorControlSelf = ActorControlSelfOpcode.HasValue 
+            ? $"[HyperFirewall] Found Opcode ActorControlSelf:{ActorControlSelfOpcode}" 
+            : "[HyperFirewall] Error: Couldn't find Opcode ActorControlSelf";
+        
+        PluginLog.Debug(logMessageHeartbeatDown);
+        PluginLog.Debug(logMessageActorControlSelf);
         
         EzSignatureHelper.Initialize(this);
         ActiveScene = (byte*)(((nint)EnvManager.Instance()) + 36);
@@ -123,7 +158,7 @@ public unsafe class Memory
         try
         {
             var opcode = *(ushort*)a2;
-            if ((ushort)HeartbeatOpcode == opcode)
+            if ((ushort)HeartbeatUpOpcode == opcode)
             {
                 PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");
                 return PacketDispatcher_OnSendPacketHook.Original(a1, a2, a3, a4);
